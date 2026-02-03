@@ -1,0 +1,11 @@
+/* Import Barlow Condensed and Jost font from Google */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --black: #27272A;
+  --pale-grey: #E6E8EA;
+}

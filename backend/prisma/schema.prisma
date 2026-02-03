@@ -1,0 +1,25 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+model Post {
+  id         Int      @id @default(autoincrement()) // Database internal ID
+  externalId Int      // The 'id' from your CSV
+  postId     Int
+  name       String
+  email      String
+  body       String   @db.Text // Use Text type for long content
+  createdAt  DateTime @default(now())
+}
