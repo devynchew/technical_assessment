@@ -51,6 +51,7 @@ export const FileUpload = ({
     <div className="p-4 border rounded">
       <div>
         <input
+          data-testid="file-upload-input"
           type="file"
           accept=".csv"
           onChange={handleUpload}
@@ -66,13 +67,13 @@ export const FileUpload = ({
       {/* Progress bar when uploading */}
       {uploading && (
         <div className="w-full mt-2">
-          {/* Label and Percentage Text */}
+          {/* Label and percentage text */}
           <div className="flex justify-between mb-1">
             <span className="text-xs font-medium text-blue-700">Uploading...</span>
             <span className="text-xs font-medium text-blue-700">{progress}%</span>
           </div>
           
-          {/* The Visual Bar */}
+          {/* Visual Bar */}
           <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div 
               className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out" 

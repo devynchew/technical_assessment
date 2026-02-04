@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { FileUpload } from "./components/FileUpload";
+import { HighlightText } from "./components/HighlightText";
 
 function App() {
   const [data, setData] = useState([]);
@@ -9,16 +10,27 @@ function App() {
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchData = async () => {
-    const res = await axios.get(
-      `http://localhost:3000/posts?page=${page}&search=${search}`,
-    );
-    setData(res.data.data);
-    setTotalPages(res.data.pages);
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/posts?page=${page}&search=${search}`,
+      );
+      setData(res.data.data);
+      setTotalPages(res.data.pages);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setData([]); // Fallback to empty list so map() doesn't break
+    }
   };
 
   const handleClear = async () => {
-    await axios.delete("http://localhost:3000/posts");
-    fetchData(); // Refresh the table (now empty)
+    try {
+      await axios.delete("http://localhost:3000/posts");
+      // Only refresh the table if the delete was successful
+      fetchData();
+    } catch (error) {
+      console.error("Failed to clear data:", error);
+      alert("Could not clear data. Please try again.");
+    }
   };
 
   // --- Scroll Function ---
@@ -29,8 +41,65 @@ function App() {
     }
   };
 
+  // Helper to generate page numbers with ellipses
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+
+    if (totalPages <= 7) {
+      // If few pages, show them all (1 2 3 4 5 6 7)
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Always show First Page
+      pageNumbers.push(1);
+
+      // Determine the start and end of the middle block
+      let startPage = Math.max(2, page - 1);
+      let endPage = Math.min(totalPages - 1, page + 1);
+
+      // Adjust if we are near the beginning
+      if (page <= 3) {
+        endPage = 4;
+      }
+      // Adjust if we are near the end
+      if (page >= totalPages - 2) {
+        startPage = totalPages - 3;
+      }
+
+      // Add Left Ellipsis
+      if (startPage > 2) {
+        pageNumbers.push("...");
+      }
+
+      // Add Middle Pages
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+
+      // Add Right Ellipsis
+      if (endPage < totalPages - 1) {
+        pageNumbers.push("...");
+      }
+
+      // Always show Last Page
+      pageNumbers.push(totalPages);
+    }
+
+    return pageNumbers;
+  };
+
+  // Create a ref to track if it's the first render
+  const isFirstRun = useRef(true);
+
   // Debounce search to ensure responsiveness
   useEffect(() => {
+    // 3. If it's the first run, skip the logic and flip the flag
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
       setPage(1);
       fetchData();
@@ -44,7 +113,8 @@ function App() {
 
   return (
     <div>
-      <section className="h-screen h-auto w-full 2xl:bg-[var(--pale-grey)] bg-blue-900 flex items-center">
+      {/* HERO SECTION */}
+      <section className="h-screen w-full 2xl:bg-[var(--pale-grey)] bg-blue-900 flex items-center">
         <div
           className="flex-1 flex flex-col 
         sm:ml-[15%] 
@@ -126,13 +196,16 @@ function App() {
           <img
             src="/hero_bg.jpg"
             alt="Hero Background"
-            className="absolute w-full h-full object-cover z-0 2xl:brightness-100 lg:brightness-70 brightness-50" 
+            className="absolute w-full h-full object-cover z-0 2xl:brightness-100 lg:brightness-70 brightness-50"
           />
         </div>
       </section>
+
+      {/* CSV DASHBOARD SECTION */}
       <section
         id="csv-viewer"
-        className="w-full max-w-[1280px] mx-auto p-4 py-14"
+        className="max-w-[1280px] mx-auto 2xl:px-0
+      px-[clamp(16px,3.33vw,64px)] py-14"
       >
         <h1 className="font-barlow uppercase text-[clamp(40px,3vw,64px)] font-bold my-[8px]">
           CSV Records
@@ -143,14 +216,13 @@ function App() {
 
         <FileUpload onUploadSuccess={fetchData} />
 
+        {/* Search bar and clear data button */}
         <div className="mt-4">
-          {/* Search bar and clear data button */}
           <div className="flex justify-end items-center">
             <div
               className="relative
-          md:w-[300px] 
-          sm:w-full 
-          w-full flex"
+              sm:w-[300px] 
+              w-full flex"
             >
               <input
                 type="text"
@@ -173,13 +245,13 @@ function App() {
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke-width="1.5"
+                  strokeWidth="1.5"
                   stroke="currentColor"
                   className="text-gray-500 xl:w-[20px] xl:h-[20px]  lg:w-[16px] lg:h-[16px]  md:w-[16px] md:h-[16px]  sm:w-[14px] sm:h-[14px]  w-[12px] h-[12px]  "
                 >
                   <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
                   ></path>
                 </svg>
@@ -203,23 +275,27 @@ function App() {
             <table className="min-w-full bg-white">
               <thead>
                 <tr className="text-left border-b">
-                  <th className="p-4 whitespace-nowrap">ID</th>
-                  <th className="p-4 whitespace-nowrap">Name</th>
-                  <th className="p-4 whitespace-nowrap">Email</th>
-                  <th className="p-4 whitespace-nowrap">Body</th>
+                  <th className="py-5 px-6 whitespace-nowrap">ID</th>
+                  <th className="py-5 px-6 whitespace-nowrap">Name</th>
+                  <th className="py-5 px-6 whitespace-nowrap">Email</th>
+                  <th className="py-5 px-6 whitespace-nowrap">Body</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map((post: any) => (
                   <tr key={post.id} className="hover:bg-gray-50 border-b">
-                    <td className="p-4">{post.externalId}</td>
-                    <td className="p-4 font-medium">{post.name}</td>
-                    <td className="p-4 text-blue-700">{post.email}</td>
+                    <td className="p-4 px-6">{post.externalId}</td>
+                    <td className="p-4 px-6 font-medium">
+                      <HighlightText text={post.name} highlight={search} />
+                    </td>
+                    <td className="p-4 px-6 text-blue-700">
+                      <HighlightText text={post.email} highlight={search} />
+                    </td>
                     <td
-                      className="p-4 text-gray-600 break-words whitespace-pre-wrap min-w-[300px]"
+                      className="p-4 px-6 text-gray-600 break-words whitespace-pre-wrap min-w-[300px]"
                       title={post.body}
                     >
-                      {post.body}
+                      <HighlightText text={post.body} highlight={search} />
                     </td>
                   </tr>
                 ))}
@@ -227,21 +303,49 @@ function App() {
             </table>
           </div>
 
-          <div className="flex justify-between mt-4">
+          {/* Pagination buttons */}
+          <div className="flex justify-center items-center gap-2 mt-6">
+            {/* prev button */}
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              className="px-3 py-2 border rounded-md text-sm font-medium transition-colors
+              disabled:opacity-50 disabled:cursor-not-allowed
+              hover:bg-gray-50 bg-white text-gray-700"
             >
               Prev
             </button>
-            <span>
-              Page {page} of {totalPages}
-            </span>
+
+            {/* Page numbers loop */}
+            {getPageNumbers().map((pageNum, index) => (
+              <div key={index}>
+                {pageNum === "..." ? (
+                  <span className="px-2 text-gray-400">...</span>
+                ) : (
+                  <button
+                    onClick={() => setPage(pageNum as number)}
+                    className={`
+            min-w-[40px] h-[40px] rounded-md text-sm font-medium transition-colors border
+            ${
+              page === pageNum
+                ? "bg-blue-700 text-white border-blue-700" // Active State
+                : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50" // Inactive State
+            }
+          `}
+                  >
+                    {pageNum}
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {/* Next button */}
             <button
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              className="px-3 py-2 border rounded-md text-sm font-medium transition-colors
+      disabled:opacity-50 disabled:cursor-not-allowed
+      hover:bg-gray-50 bg-white text-gray-700"
             >
               Next
             </button>
