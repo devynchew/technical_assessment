@@ -46,6 +46,7 @@ The entire application (Frontend, Backend, Database) is containerized.
 
 3. **Environment Setup**  
    ```bash
+   cd backend
    cp .env.example .env
 
 4. **Access the App**

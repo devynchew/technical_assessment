@@ -82,8 +82,10 @@ export const uploadPost = async (req: Request, res: Response) => {
       if (validationError) return;
 
       // Pause for 3 seconds to see the upload progress
-      console.log("Simulating slow processing...");
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (process.env.NODE_ENV !== "test") {
+        console.log("Simulating slow processing...");
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
 
       try {
         const BATCH_SIZE = 1000;
