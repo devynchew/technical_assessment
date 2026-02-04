@@ -44,7 +44,11 @@ The entire application (Frontend, Backend, Database) is containerized.
     ```bash
     docker-compose up --build
 
-3. **Access the App**
+3. **Environment Setup**  
+   ```bash
+   cp .env.example .env
+
+4. **Access the App**
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3000
 - Database: Runs on port 5432 internally.
